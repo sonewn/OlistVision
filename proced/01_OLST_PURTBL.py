@@ -5,7 +5,7 @@ import os
 spark = SparkSession.builder.master("local[*]").getOrCreate()
 
 ## Load Source Data
-for dirname, _, filenames in os.walk('/content/drive/MyDrive/Colab Notebooks/Data Engineering/archive'):
+for dirname, _, filenames in os.walk('../bucket/olist_source'):
     for filename in filenames:
         fn = filename.split('.csv')[0].split('_dataset')[0]
         globals()[fn] = spark.read.csv(os.path.join(dirname, filename),inferSchema=True,header=True)
@@ -191,8 +191,10 @@ def main(TODAY='20180903', STMTD='201808'):
     HAVING    SUM(PRICE) > 0
     )
     , RPT1 AS (
-    SELECT   REFYM, SELLER_ID, ORDER_STATUS, SELLER_STATE, SELLER_CITY, PRODUCT_CATEGORY_NAME, PRODUCT_CATEGORY_NAME_ENGLISH
-            , CASE WHEN SELLER_STATE='PR' THEN 'Parana'
+    SELECT   REFYM, SELLER_ID, ORDER_STATUS, SELLER_STATE, SELLER_CITY, PRODUCT_CATEGORY_NAME
+            , CASE  WHEN PRODUCT_CATEGORY_NAME='portateis_cozinha_e_preparadores_de_alimentos' THEN 'kitchen portals and food preparators'
+                    WHEN PRODUCT_CATEGORY_NAME='pc_gamer'                                      THEN 'pc_gamer'      ELSE PRODUCT_CATEGORY_NAME_ENGLISH  END PRODUCT_CATEGORY_NAME_ENGLISH,
+            , CASE  WHEN SELLER_STATE='PR' THEN 'Parana'
                     WHEN SELLER_STATE='RJ' THEN 'Rio de Janeiro'
                     WHEN SELLER_STATE='RS' THEN 'Rio Grande do Sul'
                     WHEN SELLER_STATE='SP' THEN 'Sao Paulo'
@@ -227,36 +229,9 @@ def main(TODAY='20180903', STMTD='201808'):
             , AMT_1/CNT_CUST UNIT_AMT
     FROM MTDTMP
     )
-    , RPT2 AS (
-    SELECT   REFYM, SELLER_ID, ORDER_STATUS, SELLER_STATE, SELLER_CITY
-            , ID
-            , SUM(CNT_CUST) CNT_CUST
-            , SUM(AMT_1) AMT_1
-            , SUM(AMT_2) AMT_2
-            , SUM(F_VALUE) F_VALUE
-            , SUM(AMT_1)/SUM(CNT_CUST) UNIT_AMT
-    )
     SELECT * FROM RPT1
     """
-    SEL_SUMM1 = spark.sql(qr)
-    SEL_SUMM1.createOrReplaceTempView("SEL_SUMM1")
+    SAL_SUMM1 = spark.sql(qr)
+    SAL_SUMM1.write.parquet("../bucket/tmp/OLST_SAL_SUUMM1.parquet") 
 
-    qr = """
-    SELECT    REFYM,
-            SELLER_ID,
-            ORDER_STATUS,
-            SELLER_STATE,
-            SELLER_CITY,
-            PRODUCT_CATEGORY_NAME,
-            CASE  WHEN PRODUCT_CATEGORY_NAME='portateis_cozinha_e_preparadores_de_alimentos' THEN 'kitchen portals and food preparators'
-                WHEN PRODUCT_CATEGORY_NAME='pc_gamer'                                      THEN 'pc_gamer'      ELSE PRODUCT_CATEGORY_NAME_ENGLISH  END PRODUCT_CATEGORY_NAME_ENGLISH,
-            ID,
-            CNT_ORDER,
-            CNT_CUST,
-            AMT_1,
-            AMT_2,
-            F_VALUE,
-            UNIT_AMT
-    FROM SEL_SUMM1
-    """
-    SEL_SUMM1_V2 = spark.sql(qr)
+    # SAL_SUMM1.createOrReplaceTempView("SAL_SUMM1")
