@@ -207,3 +207,7 @@ def main():
     OLST_DLVSUM = spark.sql(qr)
     OLST_DLVSUM.write.parquet("../bucket/tmp/OLST_DLVTBL_SUM.parquet")
 
+if __name__ == "__main__":
+    main()
+
+

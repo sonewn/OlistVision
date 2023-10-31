@@ -235,3 +235,6 @@ def main(TODAY='20180903', STMTD='201808'):
     SAL_SUMM1.write.parquet("../bucket/tmp/OLST_SAL_SUUMM1.parquet") 
 
     # SAL_SUMM1.createOrReplaceTempView("SAL_SUMM1")
+
+if __name__ == "__main__":
+    main()
